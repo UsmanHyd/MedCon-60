@@ -53,5 +53,11 @@
 	<string>Alert</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
+	
+	<!-- Location permissions for SOS functionality -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to send your coordinates during SOS emergencies.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to send your coordinates during SOS emergencies.</string>
 </dict>
 </plist>
