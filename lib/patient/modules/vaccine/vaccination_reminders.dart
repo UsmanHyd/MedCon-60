@@ -361,11 +361,13 @@ class _VaccinationReminderState extends State<VaccinationReminder> {
                                   // Add to Firestore and get the document reference
                                   final docRef = await FirestoreService()
                                       .addVaccinationReminder(reminderData);
-                                  
+
                                   // Track the activity in app history
                                   AppHistoryService().trackVaccineReminder(
                                     vaccineName: name,
-                                    dates: [dateGiven, nextDoseDate].where((date) => date.isNotEmpty).toList(),
+                                    dates: [dateGiven, nextDoseDate]
+                                        .where((date) => date.isNotEmpty)
+                                        .toList(),
                                     notes: notes,
                                   );
 
@@ -936,15 +938,34 @@ class _VaccinationReminderState extends State<VaccinationReminder> {
     String? token = await FirebaseMessaging.instance.getToken();
     if (token != null) {
       try {
-        await http.post(
-          Uri.parse('http://192.168.0.107:3000/schedule'),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({
-            'token': token,
-            'dates': dates,
-            'reminderTime': reminderTime,
-          }),
-        );
+        // Try Android emulator host first, then network IP, then localhost
+        final List<String> hosts = [
+          'http://10.0.2.2:3000',
+          'http://192.168.0.110:3000',
+          'http://127.0.0.1:3000',
+        ];
+
+        http.Response? response;
+        for (final host in hosts) {
+          try {
+            final r = await http.post(
+              Uri.parse('$host/schedule'),
+              headers: {'Content-Type': 'application/json'},
+              body: json.encode({
+                'token': token,
+                'dates': dates,
+                'reminderTime': reminderTime,
+              }),
+            );
+            if (r.statusCode == 200) {
+              response = r;
+              break;
+            }
+          } catch (_) {}
+        }
+        if (response == null) {
+          throw Exception('Could not reach reminder server on local hosts');
+        }
       } catch (e) {
         debugPrint('Failed to send reminder to server: $e');
       }

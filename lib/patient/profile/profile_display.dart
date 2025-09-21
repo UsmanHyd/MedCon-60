@@ -25,9 +25,14 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
   Map<String, dynamic>? _profileData;
   File? _profileImage;
   bool _showFullscreenCover = false;
-  double _dragStartY = 0.0;
   double _fullscreenDragStartY = 0.0;
   double _fullscreenDragDelta = 0.0;
+
+  static const Color _primaryCream = Color(0xFFF8F6F0);
+  static const Color _darkCharcoal = Color(0xFF2C2C2C);
+  static const Color _warmGray = Color(0xFF6B6B6B);
+  static const Color _accentGreen = Color(0xFF10B981);
+  static const Color _mediumGray = Color(0xFFE5E5E5);
 
   @override
   void initState() {
@@ -108,17 +113,57 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Confirm Profile Picture'),
-          content:
-              Image.file(tempImage, width: 120, height: 120, fit: BoxFit.cover),
+          backgroundColor: _primaryCream,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(
+            'Confirm Profile Picture',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              color: _darkCharcoal,
+            ),
+          ),
+          content: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.file(tempImage,
+                  width: 120, height: 120, fit: BoxFit.cover),
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              style: TextButton.styleFrom(
+                foregroundColor: _warmGray,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text('Cancel', style: TextStyle(fontSize: 16)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Yes, Save'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accentGreen,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: const Text('Save',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -155,69 +200,83 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
     }
     showModalBottomSheet(
       context: context,
+      backgroundColor: _primaryCream,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.visibility),
-                title: const Text('View Profile Picture'),
-                onTap: () {
-                  Navigator.pop(context);
-                  showDialog(
-                    context: context,
-                    builder: (context) => Dialog(
-                      backgroundColor: Colors.transparent,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: _profileImage != null
-                              ? Image.file(_profileImage!)
-                              : (profileImageUrl != null &&
-                                      profileImageUrl.isNotEmpty)
-                                  ? Image.network(profileImageUrl)
-                                  : const SizedBox.shrink(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: _mediumGray,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                _BottomSheetOption(
+                  icon: Icons.visibility_outlined,
+                  title: 'View Profile Picture',
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: _profileImage != null
+                                ? Image.file(_profileImage!)
+                                : (profileImageUrl != null &&
+                                        profileImageUrl.isNotEmpty)
+                                    ? Image.network(profileImageUrl)
+                                    : const SizedBox.shrink(),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete Profile Picture',
-                    style: TextStyle(color: Colors.red)),
-                onTap: () async {
-                  setState(() {
-                    _profileImage = null;
-                    if (_profileData != null) {
-                      _profileData!['profilePic'] = null;
+                    );
+                  },
+                ),
+                _BottomSheetOption(
+                  icon: Icons.delete_outline,
+                  title: 'Delete Profile Picture',
+                  isDestructive: true,
+                  onTap: () async {
+                    setState(() {
+                      _profileImage = null;
+                      if (_profileData != null) {
+                        _profileData!['profilePic'] = null;
+                      }
+                    });
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .update({'profilePic': FieldValue.delete()});
                     }
-                  });
-                  final user = FirebaseAuth.instance.currentUser;
-                  if (user != null) {
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user.uid)
-                        .update({'profilePic': FieldValue.delete()});
-                  }
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.add_a_photo),
-                title: const Text('Add New Picture'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAndConfirmImage();
-                },
-              ),
-            ],
+                    Navigator.pop(context);
+                  },
+                ),
+                _BottomSheetOption(
+                  icon: Icons.add_a_photo_outlined,
+                  title: 'Add New Picture',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickAndConfirmImage();
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         );
       },
@@ -227,10 +286,30 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Scaffold(
+        backgroundColor: _primaryCream,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(_accentGreen),
+            strokeWidth: 3,
+          ),
+        ),
+      );
     }
     if (_profileData == null) {
-      return const Center(child: Text('No profile data found'));
+      return Scaffold(
+        backgroundColor: _primaryCream,
+        body: Center(
+          child: Text(
+            'No profile data found',
+            style: TextStyle(
+              fontSize: 18,
+              color: _warmGray,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
     }
     final age = _calculateAge(_profileData!['dateOfBirth'] ?? '');
     final profileImageUrl = _profileImage != null
@@ -238,28 +317,22 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
         : (_profileData!['profilePic']);
 
     return Scaffold(
-      backgroundColor: widget.useWhiteBackground
-          ? Colors.white
-          : (Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF121212)
-              : const Color(0xFFE3F2FD)),
+      backgroundColor: _primaryCream,
       appBar: widget.showAppBar
           ? AppBar(
-              title: const Text(
+              title: Text(
                 'Personal Profile',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0288D1),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 24,
+                  color: _darkCharcoal,
+                  letterSpacing: -0.5,
                 ),
               ),
-              backgroundColor: widget.useWhiteBackground
-                  ? Colors.white
-                  : (Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF121212)
-                      : const Color(0xFFE3F2FD)),
+              backgroundColor: _primaryCream,
               elevation: 0,
               centerTitle: true,
-              iconTheme: const IconThemeData(color: Color(0xFF0288D1)),
+              iconTheme: IconThemeData(color: _darkCharcoal),
             )
           : null,
       body: Stack(
@@ -267,74 +340,112 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
           CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
-                child: GestureDetector(
-                  onVerticalDragStart: (details) {
-                    _dragStartY = details.localPosition.dy;
-                  },
-                  onVerticalDragUpdate: (details) {
-                    final dragDistance = details.localPosition.dy - _dragStartY;
-                    if (dragDistance > 80 && !_showFullscreenCover) {
-                      setState(() {
-                        _showFullscreenCover = true;
-                      });
-                    }
-                  },
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(32),
-                      bottomRight: Radius.circular(32),
+                child: Container(
+                  height: 320,
+                  margin: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        _darkCharcoal,
+                        _darkCharcoal.withOpacity(0.8),
+                      ],
                     ),
-                    child: Container(
-                      height: 260,
-                      width: double.infinity,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF23272F)
-                          : Colors.blue[50],
-                      child: profileImageUrl != null
-                          ? Image(
-                              image: _profileImage != null
-                                  ? FileImage(_profileImage!)
-                                  : NetworkImage(profileImageUrl)
-                                      as ImageProvider,
-                              fit: BoxFit.cover,
-                              alignment: const Alignment(0, -0.3),
-                            )
-                          : Center(
-                              child: Icon(
-                                Icons.account_circle,
-                                size: 120,
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white24
-                                    : Colors.blue[100],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      if (profileImageUrl != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: Image(
+                            image: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                : NetworkImage(profileImageUrl)
+                                    as ImageProvider,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
+                      if (profileImageUrl == null)
+                        Center(
+                          child: Icon(
+                            Icons.account_circle_outlined,
+                            size: 120,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 24,
+                        left: 24,
+                        right: 24,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _profileData!['name'] ?? 'No Name',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -1,
                               ),
                             ),
-                    ),
-                  ),
-                ),
-              ),
-              SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 16),
-                  // Main info card
-                  Card(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF23272F)
-                        : Colors.white,
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 18),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GestureDetector(
-                            onTap: _showProfilePictureOptions,
+                            const SizedBox(height: 4),
+                            Text(
+                              _profileData!['email'] ?? 'No Email',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white.withOpacity(0.9),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        top: 24,
+                        right: 24,
+                        child: GestureDetector(
+                          onTap: _showProfilePictureOptions,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
                             child: CircleAvatar(
-                              radius: 36,
+                              radius: 37,
                               backgroundColor: Colors.white,
                               backgroundImage: profileImageUrl != null
                                   ? (_profileImage != null
@@ -343,120 +454,71 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
                                       as ImageProvider
                                   : null,
                               child: profileImageUrl == null
-                                  ? const Icon(Icons.account_circle,
-                                      size: 48, color: Color(0xFF0288D1))
+                                  ? Icon(Icons.add_a_photo_outlined,
+                                      size: 32, color: _warmGray)
                                   : null,
                             ),
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _profileData!['name'] ?? 'No Name',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.lightBlue[200]
-                                        : const Color(0xFF2196F3),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _profileData!['email'] ?? 'No Email',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.white70
-                                        : Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  // Personal Information Card
-                  Card(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF23272F)
-                        : Colors.white,
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Personal Information',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.lightBlue[200]
-                                      : const Color(0xFF2196F3))),
-                          const SizedBox(height: 10),
-                          _InfoRow(
-                              label: 'Phone Number',
-                              value: _profileData!['phoneNumber'] ??
-                                  'Not provided'),
-                          _InfoRow(
-                              label: 'Address',
-                              value:
-                                  _profileData!['address'] ?? 'Not provided'),
-                          _InfoRow(
-                              label: 'Date of Birth',
-                              value: _profileData!['dateOfBirth'] ??
-                                  'Not provided'),
-                          if (age != null)
-                            _InfoRow(label: 'Age', value: age.toString()),
-                          _InfoRow(
-                              label: 'Gender',
-                              value: _profileData!['gender'] ?? 'Not provided'),
-                        ],
-                      ),
-                    ),
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 8),
+                  _EnhancedInfoCard(
+                    title: 'Personal Information',
+                    icon: Icons.person_outline,
+                    children: [
+                      _EnhancedInfoRow(
+                          icon: Icons.phone_outlined,
+                          label: 'Phone Number',
+                          value:
+                              _profileData!['phoneNumber'] ?? 'Not provided'),
+                      _EnhancedInfoRow(
+                          icon: Icons.location_on_outlined,
+                          label: 'Address',
+                          value: _profileData!['address'] ?? 'Not provided'),
+                      _EnhancedInfoRow(
+                          icon: Icons.cake_outlined,
+                          label: 'Date of Birth',
+                          value:
+                              _profileData!['dateOfBirth'] ?? 'Not provided'),
+                      if (age != null)
+                        _EnhancedInfoRow(
+                            icon: Icons.calendar_today_outlined,
+                            label: 'Age',
+                            value: '$age years old'),
+                      _EnhancedInfoRow(
+                          icon: Icons.wc_outlined,
+                          label: 'Gender',
+                          value: _profileData!['gender'] ?? 'Not provided'),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  // Medical Information Card
-                  Card(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF23272F)
-                        : Colors.white,
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Medical Information',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.lightBlue[200]
-                                      : const Color(0xFF2196F3))),
-                          const SizedBox(height: 10),
-                          _MedicalConditionsDisplay(profileData: _profileData),
-                        ],
-                      ),
-                    ),
+                  const SizedBox(height: 24),
+                  _EnhancedInfoCard(
+                    title: 'Emergency Contacts',
+                    icon: Icons.emergency_outlined,
+                    children: [
+                      _EmergencyContactsDisplay(profileData: _profileData),
+                    ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+                  _EnhancedInfoCard(
+                    title: 'Medical Information',
+                    icon: Icons.medical_services_outlined,
+                    children: [
+                      _EnhancedMedicalConditionsDisplay(
+                          profileData: _profileData),
+                    ],
+                  ),
                   const SizedBox(height: 100),
                 ]),
               ),
             ],
           ),
-          // Fullscreen cover image overlay
           if (_showFullscreenCover && profileImageUrl != null)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
@@ -525,70 +587,187 @@ class _ProfileDisplayScreenState extends ConsumerState<ProfileDisplayScreen>
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow({required this.label, required this.value});
+class _EnhancedInfoCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+
+  const _EnhancedInfoCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor = isDark ? Colors.lightBlue[100] : Colors.black87;
-    final valueColor = isDark ? Colors.white : Colors.black;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color:
+                        ProfileDisplayScreenState._accentGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: ProfileDisplayScreenState._accentGreen,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                    color: ProfileDisplayScreenState._darkCharcoal,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EnhancedInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _EnhancedInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$label:',
-              style: TextStyle(fontWeight: FontWeight.w600, color: labelColor)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(value, style: TextStyle(color: valueColor))),
+          Icon(
+            icon,
+            size: 20,
+            color: ProfileDisplayScreenState._warmGray,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: ProfileDisplayScreenState._warmGray,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: ProfileDisplayScreenState._darkCharcoal,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _MedicalConditionsDisplay extends StatelessWidget {
+class _EnhancedMedicalConditionsDisplay extends StatelessWidget {
   final Map<String, dynamic>? profileData;
-  const _MedicalConditionsDisplay({required this.profileData});
+
+  const _EnhancedMedicalConditionsDisplay({required this.profileData});
+
   @override
   Widget build(BuildContext context) {
     final conditions =
         profileData?['medicalConditions'] as List<dynamic>? ?? [];
     final additionalConditions =
         profileData?['additionalConditions'] as String? ?? '';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (conditions.isNotEmpty) ...[
-          Text(
-            'Selected Conditions',
-            style: TextStyle(
-              color: isDark ? Colors.lightBlue[200] : const Color(0xFF2196F3),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Icon(
+                Icons.local_hospital_outlined,
+                size: 20,
+                color: ProfileDisplayScreenState._warmGray,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Selected Conditions',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: ProfileDisplayScreenState._warmGray,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 12,
+            runSpacing: 12,
             children: conditions.map((condition) {
               return Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF23272F) : Colors.blueGrey[50],
+                  color:
+                      ProfileDisplayScreenState._accentGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Theme.of(context).dividerColor,
+                    color:
+                        ProfileDisplayScreenState._accentGreen.withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
                 child: Text(
                   condition.toString(),
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
+                  style: const TextStyle(
+                    color: ProfileDisplayScreenState._darkCharcoal,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
                   ),
                 ),
               );
@@ -596,45 +775,248 @@ class _MedicalConditionsDisplay extends StatelessWidget {
           ),
         ],
         if (additionalConditions.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Additional Conditions',
-            style: TextStyle(
-              color: isDark ? Colors.lightBlue[200] : const Color(0xFF2196F3),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Icon(
+                Icons.note_outlined,
+                size: 20,
+                color: ProfileDisplayScreenState._warmGray,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Additional Notes',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: ProfileDisplayScreenState._warmGray,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF23272F) : Colors.blueGrey[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Theme.of(context).dividerColor),
+              color: ProfileDisplayScreenState._lightGray,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: ProfileDisplayScreenState._mediumGray,
+                width: 1,
+              ),
             ),
             child: Text(
               additionalConditions,
-              style: TextStyle(
-                color: isDark ? Colors.white : Colors.black,
+              style: const TextStyle(
+                color: ProfileDisplayScreenState._darkCharcoal,
+                fontSize: 15,
+                height: 1.5,
               ),
             ),
           ),
         ],
         if (conditions.isEmpty && additionalConditions.isEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                'No medical conditions recorded',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: ProfileDisplayScreenState._lightGray,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.medical_services_outlined,
+                  size: 48,
+                  color: ProfileDisplayScreenState._warmGray.withOpacity(0.5),
                 ),
-              ),
+                const SizedBox(height: 12),
+                Text(
+                  'No medical conditions recorded',
+                  style: TextStyle(
+                    color: ProfileDisplayScreenState._warmGray,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
       ],
     );
   }
+}
+
+class _BottomSheetOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  const _BottomSheetOption({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isDestructive
+              ? Colors.red.withOpacity(0.1)
+              : ProfileDisplayScreenState._accentGreen.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: isDestructive
+              ? Colors.red
+              : ProfileDisplayScreenState._accentGreen,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isDestructive
+              ? Colors.red
+              : ProfileDisplayScreenState._darkCharcoal,
+          fontWeight: FontWeight.w500,
+          fontSize: 16,
+        ),
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+    );
+  }
+}
+
+class _EmergencyContactsDisplay extends StatelessWidget {
+  final Map<String, dynamic>? profileData;
+
+  const _EmergencyContactsDisplay({required this.profileData});
+
+  @override
+  Widget build(BuildContext context) {
+    final emergencyContacts =
+        profileData?['emergencyContacts'] as List<dynamic>? ?? [];
+
+    if (emergencyContacts.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: ProfileDisplayScreenState._lightGray,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.contact_emergency_outlined,
+              size: 48,
+              color: ProfileDisplayScreenState._warmGray.withOpacity(0.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No emergency contacts added',
+              style: TextStyle(
+                color: ProfileDisplayScreenState._warmGray,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: emergencyContacts.map((contact) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.red.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.person_outline,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      contact['name'] ?? 'Unknown',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: ProfileDisplayScreenState._darkCharcoal,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      contact['relationship'] ?? 'No relationship specified',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: ProfileDisplayScreenState._warmGray,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      contact['phone'] ?? 'No phone number',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: ProfileDisplayScreenState._darkCharcoal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  // Add call functionality here
+                },
+                icon: Icon(
+                  Icons.call_outlined,
+                  color: ProfileDisplayScreenState._accentGreen,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+extension ProfileDisplayScreenState on _ProfileDisplayScreenState {
+  static const Color _darkCharcoal = Color(0xFF2C2C2C);
+  static const Color _warmGray = Color(0xFF6B6B6B);
+  static const Color _accentGreen = Color(0xFF10B981);
+  static const Color _lightGray = Color(0xFFF5F5F5);
+  static const Color _mediumGray = Color(0xFFE5E5E5);
 }

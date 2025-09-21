@@ -89,70 +89,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final List<Widget> _screens = [
     const CommunityGroupsScreen(showAppBar: false),
     const _DashboardContent(),
-    const ProfileDisplayScreen(showAppBar: false, useWhiteBackground: true),
+    const _DoctorsScreen(),
   ];
 
   void _handleTabChange(int index) {
     setState(() {
       _currentIndex = index;
     });
-  }
-
-  // --- Doctor History Bottom Sheet Widget ---
-  Widget _DoctorHistorySheet(String doctorName) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundImage: doctorName == 'Dr. Ahmed Raza'
-                    ? const NetworkImage(
-                        'https://randomuser.me/api/portraits/men/32.jpg')
-                    : const NetworkImage(
-                        'https://randomuser.me/api/portraits/women/44.jpg'),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(doctorName,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 18)),
-                  Text(
-                      doctorName == 'Dr. Ahmed Raza'
-                          ? 'Cardiologist'
-                          : 'General Physician',
-                      style: const TextStyle(color: Colors.grey)),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          const Text('Chat History',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          const Text('• "How are you feeling today?"'),
-          const Text('• "Please share your last ECG report."'),
-          const SizedBox(height: 12),
-          const Text('Consultation Requests',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          const Text('• 12 Jan 2024: Heart Checkup'),
-          const Text('• 20 Feb 2024: General Consultation'),
-          const SizedBox(height: 12),
-          const Text('Prescriptions',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          const Text('• 12 Jan 2024: Beta Blockers'),
-          const Text('• 20 Feb 2024: Multivitamins'),
-        ],
-      ),
-    );
   }
 
   @override
@@ -428,81 +371,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: const Text('View Complete Settings'),
                   ),
                 ),
-                // --- My Doctors Section ---
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 0, 4),
-                  child: Text('My Doctors',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: isDarkMode ? Colors.white70 : Colors.black54)),
-                ),
-                ...[
-                  // Hardcoded doctors
-                  ListTile(
-                    leading: const CircleAvatar(
-                        backgroundImage: NetworkImage(
-                            'https://randomuser.me/api/portraits/men/32.jpg')),
-                    title: const Text('Dr. Ahmed Raza'),
-                    subtitle: const Text('Cardiologist'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      showModalBottomSheet(
-                        context: context,
-                        shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(20))),
-                        builder: (context) =>
-                            _DoctorHistorySheet('Dr. Ahmed Raza'),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    leading: const CircleAvatar(
-                        backgroundImage: NetworkImage(
-                            'https://randomuser.me/api/portraits/women/44.jpg')),
-                    title: const Text('Dr. Sara Khan'),
-                    subtitle: const Text('General Physician'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      showModalBottomSheet(
-                        context: context,
-                        shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(20))),
-                        builder: (context) =>
-                            _DoctorHistorySheet('Dr. Sara Khan'),
-                      );
-                    },
-                  ),
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDarkMode
-                            ? Colors.blueGrey[800]
-                            : const Color(0xFF0288D1),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        minimumSize: const Size.fromHeight(36),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20))),
-                          builder: (context) => _AllDoctorsSheet(isDarkMode),
-                        );
-                      },
-                      child: const Text('View All'),
-                    ),
-                  ),
-                ],
                 const Divider(),
                 // --- App History Section ---
                 Padding(
@@ -717,8 +585,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               highlightColor: Color(0xFF0288D1),
             ),
             NavBarItem(
-              icon: Icons.person,
-              label: "Profile",
+              icon: Icons.medical_services,
+              label: "Doctors",
               highlightColor: Color(0xFF0288D1),
             ),
           ],
@@ -737,6 +605,283 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      ),
+    );
+  }
+}
+
+class _DoctorsScreen extends StatelessWidget {
+  const _DoctorsScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode =
+        provider_pkg.Provider.of<ThemeProvider>(context).isDarkMode;
+
+    return Scaffold(
+      backgroundColor: isDarkMode ? Colors.grey[900] : const Color(0xFFF5F5F5),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0288D1), Color(0xFF01579B)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.grey.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'My Doctors',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Connect with your healthcare providers',
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Doctor Cards
+            _DoctorCard(
+              name: 'Dr. Ahmed Raza',
+              specialization: 'Cardiologist',
+              imageUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+              isDarkMode: isDarkMode,
+              onTap: () {
+                _showDoctorHistorySheet(context, 'Dr. Ahmed Raza');
+              },
+            ),
+            const SizedBox(height: 16),
+            _DoctorCard(
+              name: 'Dr. Sara Khan',
+              specialization: 'General Physician',
+              imageUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
+              isDarkMode: isDarkMode,
+              onTap: () {
+                _showDoctorHistorySheet(context, 'Dr. Sara Khan');
+              },
+            ),
+            const SizedBox(height: 16),
+            _DoctorCard(
+              name: 'Dr. John Doe',
+              specialization: 'Dermatologist',
+              imageUrl: null,
+              isDarkMode: isDarkMode,
+              onTap: () {
+                _showDoctorHistorySheet(context, 'Dr. John Doe');
+              },
+            ),
+            const SizedBox(height: 16),
+            _DoctorCard(
+              name: 'Dr. Jane Smith',
+              specialization: 'Neurologist',
+              imageUrl: null,
+              isDarkMode: isDarkMode,
+              onTap: () {
+                _showDoctorHistorySheet(context, 'Dr. Jane Smith');
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // View All Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDarkMode
+                      ? Colors.blueGrey[800]
+                      : const Color(0xFF0288D1),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  minimumSize: const Size.fromHeight(48),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  _showAllDoctorsSheet(context, isDarkMode);
+                },
+                child: const Text('View All Doctors'),
+              ),
+            ),
+            const SizedBox(height: 80),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDoctorHistorySheet(BuildContext context, String doctorName) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => _DoctorHistorySheet(doctorName),
+    );
+  }
+
+  void _showAllDoctorsSheet(BuildContext context, bool isDarkMode) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => _AllDoctorsSheet(isDarkMode),
+    );
+  }
+
+  // --- Doctor History Bottom Sheet Widget ---
+  Widget _DoctorHistorySheet(String doctorName) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundImage: doctorName == 'Dr. Ahmed Raza'
+                    ? const NetworkImage(
+                        'https://randomuser.me/api/portraits/men/32.jpg')
+                    : const NetworkImage(
+                        'https://randomuser.me/api/portraits/women/44.jpg'),
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(doctorName,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(
+                      doctorName == 'Dr. Ahmed Raza'
+                          ? 'Cardiologist'
+                          : 'General Physician',
+                      style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Text('Chat History',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          const Text('• "How are you feeling today?"'),
+          const Text('• "Please share your last ECG report."'),
+          const SizedBox(height: 12),
+          const Text('Consultation Requests',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          const Text('• 12 Jan 2024: Heart Checkup'),
+          const Text('• 20 Feb 2024: General Consultation'),
+          const SizedBox(height: 12),
+          const Text('Prescriptions',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          const Text('• 12 Jan 2024: Beta Blockers'),
+          const Text('• 20 Feb 2024: Multivitamins'),
+        ],
+      ),
+    );
+  }
+}
+
+class _DoctorCard extends StatelessWidget {
+  final String name;
+  final String specialization;
+  final String? imageUrl;
+  final bool isDarkMode;
+  final VoidCallback onTap;
+
+  const _DoctorCard({
+    required this.name,
+    required this.specialization,
+    this.imageUrl,
+    required this.isDarkMode,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.2)
+                : Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          radius: 28,
+          backgroundImage: imageUrl != null ? NetworkImage(imageUrl!) : null,
+          child: imageUrl == null
+              ? Icon(
+                  Icons.person,
+                  color: isDarkMode ? Colors.white54 : Colors.grey[600],
+                  size: 28,
+                )
+              : null,
+        ),
+        title: Text(
+          name,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
+        ),
+        subtitle: Text(
+          specialization,
+          style: TextStyle(
+            fontSize: 14,
+            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0288D1).withOpacity(isDarkMode ? 0.2 : 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.arrow_forward_ios,
+              color: Color(0xFF0288D1), size: 16),
+        ),
+        onTap: onTap,
       ),
     );
   }

@@ -641,6 +641,10 @@ class _DoctorProfileDisplayScreenState
                           _InfoRow(
                               label: 'Gender',
                               value: _profileData!['gender'] ?? 'Not provided'),
+                          _InfoRow(
+                              label: 'License Number',
+                              value: _profileData!['licenseNumber'] ??
+                                  'Not provided'),
                         ],
                       ),
                     ),

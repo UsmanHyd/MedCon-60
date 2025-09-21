@@ -9,9 +9,9 @@ import 'package:medcon30/doctor/modules/patients_screen.dart';
 import 'package:medcon30/doctor/modules/analytics_dashboard_screen.dart';
 import 'package:medcon30/doctor/profile/profile_display.dart';
 import 'package:medcon30/doctor/profile/profile_creation.dart';
+import 'package:medcon30/doctor/profile/edit_profile.dart';
 import 'package:medcon30/services/auth_service.dart';
 import 'package:medcon30/splash_screen.dart';
-import 'package:medcon30/providers/doctor_provider.dart';
 
 class DoctorDashboard extends ConsumerStatefulWidget {
   const DoctorDashboard({Key? key}) : super(key: key);
@@ -23,7 +23,6 @@ class DoctorDashboard extends ConsumerStatefulWidget {
 class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
   int _currentIndex = 1;
   bool _isLoading = true;
-  bool _hasProfile = false;
   String? _doctorName;
   String? _specialization;
   String? _profileImageUrl;
@@ -41,24 +40,16 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
       if (user == null) {
         setState(() {
           _isLoading = false;
-          _hasProfile = false;
         });
         return;
       }
 
-      final doc = await FirebaseFirestore.instance
-          .collection('doctors')
-          .doc(user.uid)
-          .get();
-
       setState(() {
         _isLoading = false;
-        _hasProfile = doc.exists && doc.data()?['fullName'] != null;
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _hasProfile = false;
       });
     }
   }
@@ -105,8 +96,6 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
     _DashboardContent(),
     _ProfileScreen(),
   ];
-
-  final List<String> _titles = ['Patients', 'Dashboard', 'Profile'];
 
   void _handleTabChange(int index) {
     setState(() {
@@ -358,11 +347,57 @@ class _DoctorDashboardState extends ConsumerState<DoctorDashboard> {
                 ListTile(
                   leading: const Icon(Icons.edit, color: Colors.blue),
                   title: const Text('Edit Profile'),
-                  onTap: () {
-                    setState(() {
-                      _currentIndex = 2;
-                    });
+                  onTap: () async {
                     Navigator.pop(context);
+                    // Load current profile data and navigate to edit screen
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        final doc = await FirebaseFirestore.instance
+                            .collection('doctors')
+                            .doc(user.uid)
+                            .get();
+
+                        if (doc.exists) {
+                          final data = doc.data()!;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DoctorEditProfileScreen(
+                                profileData: {
+                                  'name': data['name'] ?? '',
+                                  'email': data['email'] ?? '',
+                                  'phoneNumber': data['phoneNumber'] ?? '',
+                                  'licenseNumber': data['licenseNumber'] ?? '',
+                                  'education': data['education'] ?? [],
+                                  'specializations':
+                                      data['specializations'] ?? [],
+                                  'dateOfBirth': data['dateOfBirth'] ?? '',
+                                  'gender': data['gender'] ?? 'Male',
+                                  'experience': data['experience'] ?? [],
+                                  'profilePic': data['profilePic'],
+                                },
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Profile not found. Please create a profile first.'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error loading profile: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   },
                 ),
                 ListTile(
@@ -813,7 +848,6 @@ class _TodaysScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode =
         provider_pkg.Provider.of<ThemeProvider>(context).isDarkMode;
-    final today = DateTime.now();
     const dateStr = "May 21, 2025"; // For demo, use static date
     return Container(
       width: double.infinity,

@@ -66,16 +66,38 @@ class DiseaseNotifier extends StateNotifier<AsyncValue<DiseasePredictions?>> {
     try {
       state = const AsyncValue.loading();
 
-      // Call the real ML model API
-      final response = await http.post(
-        Uri.parse('http://192.168.0.107:8000/predict'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'symptoms': symptoms,
-        }),
-      );
+      // Call the real ML model API (portable across machines)
+      // Try Android emulator host first, then network IP, then localhost
+      final List<String> mlApiHosts = [
+        'http://10.0.2.2:8000',
+        'http://192.168.0.110:8000',
+        'http://127.0.0.1:8000',
+      ];
+
+      http.Response? response;
+      for (final host in mlApiHosts) {
+        try {
+          final r = await http.post(
+            Uri.parse('$host/predict'),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'symptoms': symptoms,
+            }),
+          );
+          if (r.statusCode == 200) {
+            response = r;
+            break;
+          }
+        } catch (_) {
+          // Try next host
+        }
+      }
+
+      if (response == null) {
+        throw 'Unable to reach ML prediction API on local hosts';
+      }
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

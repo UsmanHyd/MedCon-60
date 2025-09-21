@@ -91,8 +91,8 @@ class PatientDetailsScreen extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              const PrescriptionAssistantScreen()),
+                          builder: (context) => PrescriptionAssistantScreen(
+                              patientData: request)),
                     );
                   },
                   style: ElevatedButton.styleFrom(
