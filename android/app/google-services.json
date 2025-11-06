@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "998940405325",
+    "project_id": "medcon-30-24239",
+    "storage_bucket": "medcon-30-24239.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998940405325:android:0f814671586d12b7f0b604",
+        "android_client_info": {
+          "package_name": "com.example.medcon30"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3nuI6uibeKycxJdhjZbO1nAMCPGY6xv8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
